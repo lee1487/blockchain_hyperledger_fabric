@@ -151,7 +151,17 @@ $ docker exec -it cli bash
 # peer channel join -b mychannel.block
 
 3. 두 조직의 peer0를 앵커로 가입시킨다.
+# CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp \
+# CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+# CORE_PEER_LOCALMSPID="Org1MSP" \
+# CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+# peer channel update -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/Org1MSPanchors.tx --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
 
+# CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp \
+# CORE_PEER_ADDRESS=peer0.org2.example.com:9051 \
+# CORE_PEER_LOCALMSPID="Org2MSP" \
+# CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
+# peer channel update -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/Org2MSPanchors.tx --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
 
 4. 피어 노드에 체인코드를 설치하고 확인하는 단계다. 이 단계에서 해당 피어 노드의 체인코드를 담당하는 체인코드 컨테이너 3개가 실행된다.
   - 두 조직의 앵커 피어 노드(peer0.org1, peer0.org2)에 체인코드를 설치한다.
@@ -160,4 +170,39 @@ $ docker exec -it cli bash
   - 트랜잭션 호출(invoke)로 a에서 b로 10만큼 이동한다.
   - 체인코드를 갖고 있지 않은 peer1.org2에 체인코드를 설치한다.
   - peer1.org2에서 값 a를 조회한다. 초깃값인 100에서 전송한 10을 뺀 90이 조회된다.
+  
+# CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp \
+# CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+# CORE_PEER_LOCALMSPID="Org1MSP" \
+# CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+# peer chaincode install -n mycc -v 1.0 -p github.com/chaincode/chaincode_example02/go/
+
+# CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp \
+# CORE_PEER_ADDRESS=peer0.org2.example.com:9051 \
+# CORE_PEER_LOCALMSPID="Org2MSP" \
+# CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
+# peer chaincode install -n mycc -v 1.0 -p github.com/chaincode/chaincode_example02/go/
+
+# peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n mycc -v 1.0 -c '{"Args":["init","a", "100", "b","200"]}' -P "OR('Org1MSP.peer','Org2MSP.peer')"
+
+# CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp \
+# CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
+# CORE_PEER_LOCALMSPID="Org1MSP" \
+# CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+# peer chaincode query -C $CHANNEL_NAME -n mycc -c '{"Args":["query","a"]}'
+
+# peer chaincode invoke -o orderer.example.com:7050 -- tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n mycc -v 1.0 -c '{"Args":["invoke","a","b","10"]}'
+
+# CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp 
+# CORE_PEER_ADDRESS=peer1.org2.example.com:10051 
+# CORE_PEER_LOCALMSPID="Org2MSP" 
+# CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls/ca.crt 
+# peer chaincode install -n mycc -v 1.0 -p github.com/chaincode/chaincode_example02/go/
+
+# peer chaincode query -C $CHANNEL_NAME -n mycc -c '{"Args":["query","a"]}'
+
+# exit
+$ docker-compose -f docker-compose-cli.yaml down
+$ rm -rf channel-artifacts/*.block channel-artifacts/*.tx crypto-config
+$ docker rm $(docker ps -aq) -f
 ```
