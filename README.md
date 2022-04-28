@@ -191,7 +191,7 @@ $ docker exec -it cli bash
 # CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
 # peer chaincode query -C $CHANNEL_NAME -n mycc -c '{"Args":["query","a"]}'
 
-# peer chaincode invoke -o orderer.example.com:7050 -- tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n mycc -v 1.0 -c '{"Args":["invoke","a","b","10"]}'
+# peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n mycc -c '{"Args":["invoke","a","b","10"]}'
 
 # CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp 
 # CORE_PEER_ADDRESS=peer1.org2.example.com:10051 
@@ -205,4 +205,27 @@ $ docker exec -it cli bash
 $ docker-compose -f docker-compose-cli.yaml down
 $ rm -rf channel-artifacts/*.block channel-artifacts/*.tx crypto-config
 $ docker rm $(docker ps -aq) -f
+
+
+---------------------------------------------------------
+체인코드 작성 - Java 
+
+체인코드 작성 후 빌드시 문제발생 
+-> 4.4.1 gradle 버전에 맞게 build.gradle 작성 및 wrapper안에 properties파일에 4.4.1로 변경
+---------------------------------------------------------
+$ docker exec -it cli bash
+
+# peer chaincode install -n mycc3 -v 1.0 -l java -p /opt/gopath/src/github.com/chaincode/basicchaincode/java/
+# peer chaincode instantiate -o orderer.example.com:7050 -v 1.0 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n mycc3 -l java -c '{"Args":["a","10"]}'
+
+# peer chaincode query -C mychannel -n mycc3 -c '{"Args":["get","a"]}'
+
+# peer chaincode invoke --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n mycc3 -c '{"Args":["set","b", "100"]}'
+
+# peer chaincode query -C mychannel -n mycc3 -c '{"Args":["get","b"]}'
+
+# peer chaincode invoke --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n mycc3 -c '{"Args":["transfer","a", "b", "10"]}'
+
+
+지금까지 기본적인 하이퍼레저 패브릭 네트워크를 구축하고 체인코드를 개발해 스마트 컨트랙트가 실행되는 것을 확인하고 학습했다.
 ```
