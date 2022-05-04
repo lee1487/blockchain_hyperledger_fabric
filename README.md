@@ -7,18 +7,18 @@ Ubuntu 18.04 설치
 ---------------------------------------------------------
 1. curl 설치
 $ sudo apt install curl 
-$ curl -V
+$ curl -V   7.58.0
 
 2. 도커 설치
 $ curl -fsSL https://get.docker.com/ | sudo sh
 $ sudo usermod -aG docker $USER
 $ sudo reboot
-$ docker -v
+$ docker -v  20.10.14
 
 3. docker-compose 설치
 $ sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 $ sudo chmod +x /usr/local/bin/docker-compose
-$ docker-compose --version
+$ docker-compose --version 1.22.0
 
 4. go 설치
 $ cd /usr/local
@@ -29,20 +29,20 @@ echo 'export GOPATH=$HOME/go' | tee -a $HOME/.bashrc && \
 echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' | tee -a $HOME/.bashrc && \
 mkdir -p $HOME/go/{src,pkg,bin}
 $ sudo reboot
-$ go version
+$ go version	1.11.1
 
 5. git 설치
 $ sudo apt install -y git 
-$ git --version
+$ git --version		2.17.1
 
 6. python설치
 $ sudo apt install -y python
-$ python --version
+$ python --version  2.7.17
 
 7. node, npm 설치
 $ curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash
 $ sudo reboot
-$ nvm install 8
+$ nvm install 8			node version 8.17.0
 $ nvm use 8
 $ npm install npm@5.6.0 -g
 
@@ -51,11 +51,11 @@ $ sudo add-apt-repository ppa:openjdk-r/ppa
 $ sudo apt update
 $ sudo apt install openjdk-8-jdk openjdk-8-jre
 $ javac -version
-$ java -version
+$ java -version		1.8.0_312
 
 9. gradle 설치
 $ sudo apt install gradle
-$ gradle -v
+$ gradle -v			4.4.1
 
 10. 하이퍼레저 패브릭 설치 
 $ cd $GOPATH/src
@@ -82,6 +82,9 @@ $ ./byfn.sh generate
 ---------------------------------------------------------
 네트워크 구성
 ---------------------------------------------------------
+$ cd $GOPATH/src/fabric-samples/
+$ cp -r ./first-network ./first-network-copy
+
 1. cryptogen 도구를 사용해 인증서를 생성한다.
 
 $ cd $GOPATH/src/fabric-samples/first-network-copy
@@ -132,11 +135,11 @@ $ docker exec -it cli bash
 # ls
 # peer channel join -b mychannel.block
 
-# CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp 
-# CORE_PEER_ADDRESS=peer1.org1.example.com:8051 
-# CORE_PEER_LOCALMSPID="Org1MSP" 
-# CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt 
-# peer channel join -b mychannel.block
+#CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp 
+#CORE_PEER_ADDRESS=peer1.org1.example.com:8051 
+#CORE_PEER_LOCALMSPID="Org1MSP" 
+#CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt 
+#peer channel join -b mychannel.block
 
 # CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp 
 # CORE_PEER_ADDRESS=peer0.org2.example.com:9051 
@@ -183,7 +186,7 @@ $ docker exec -it cli bash
 # CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
 # peer chaincode install -n mycc -v 1.0 -p github.com/chaincode/chaincode_example02/go/
 
-# peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n mycc -v 1.0 -c '{"Args":["init","a", "100", "b","200"]}' -P "OR('Org1MSP.peer','Org2MSP.peer')"
+# peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n mycc1 -v 1.0 -c '{"Args":["init","a", "100", "b","200"]}' -P "OR('Org1MSP.peer','Org2MSP.peer')"
 
 # CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp \
 # CORE_PEER_ADDRESS=peer0.org1.example.com:7051 \
@@ -227,5 +230,104 @@ $ docker exec -it cli bash
 # peer chaincode invoke --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n mycc3 -c '{"Args":["transfer","a", "b", "10"]}'
 
 
+---------------------------------------------------------
 지금까지 기본적인 하이퍼레저 패브릭 네트워크를 구축하고 체인코드를 개발해 스마트 컨트랙트가 실행되는 것을 확인하고 학습했다.
+
+---------------------------------------------------------
+cd /home/hslee/go/src/fabric-samples/first-network
+cd /home/hslee/go/src/careerpath/basic-network
+
+
+---------------------------------------------------------
+하이퍼레저 패브릭 네트워크 구축 
+---------------------------------------------------------
+1. 서비스 시나리오 
+
+2. 하이퍼레저 패브릭 네트워크 구축 
+$ cd $GOPATH/src
+$ mkdir careerpath && cd careerpath
+$ mkdir basic-network && cd basic-network
+$ mkdir crypto-config
+$ touch crypto-config.yaml
+
+$ touch configtx.yaml
+$ touch docker-compose.yaml
+$ export FABRIC_CFG_PATH=$PWD
+$ cp -r $GOPATH/src/fabric-samples/bin ./
+
+2-1. 인증서 구성 파일 작성 
+$ cd $GOPATH/src/careerpath/basic-network
+$ vi crypto-config.yaml
+$ ./bin/cryptogen generate --config=./crypto-config.yaml
+
+2-2. 제네시스 블록 및 트랜잭션 생성 
+$ cd $GOPATH/src/careerpath/basic-network
+$ vi configtx.yaml
+$ mkdir config
+$ ./bin/configtxgen -profile OrdererGenesis -outputBlock ./config/genesis.block
+
+$ ./bin/configtxgen -profile Channel1 -outputCreateChannelTx ./config/channel1.tx -channelID channelclient1
+$ ./bin/configtxgen -profile Channel1 -outputAnchorPeersUpdate ./config/Client1Organchors.tx -channelID channelclient1 -asOrg Client1Org
+$ ./bin/configtxgen -profile Channel1 -outputAnchorPeersUpdate ./config/CompanyOrganchors.tx -channelID channelclient1 -asOrg CompanyOrg
+
+2-3. 도커 컨테이너 구성 파일 작성 
+$ cd $GOPATH/src/careerpath/basic-network
+$ vi docker-compose.yaml  sudo
+
+$ cd $GOPATH/src/careerpath/basic-network
+$ touch .env && vi .env
+COMPOSE_PROJECT_NAME=net 입력 후 저장
+
+$ docker-compose -f docker-compose.yaml -p net up -d orderer.acornpub.com peer0.client1.acornpub.com peer1.client1.acornpub.com peer0.company.acornpub.com peer1.company.acornpub.com cli	
+
+터미널 2개 실행
+[터미널1] Client1 조직의 peer0 노드 CLI 실행 
+$ docker exec -it cli bash
+
+[터미널2] Company 조직의 peer0 노드 CLI 실행 
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" -it cli bash
+
+[터미널1] Client1 조직의 peer0 노드에서 channelclient1 채널 생성 
+# peer channel create -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/channel1.tx
+
+[터미널1] Client1 조직의 peer0 노드를 channelclient1 채널에 가입 및 앵커 피어 지정 업데이트 
+# peer channel join -b channelclient1.block
+# peer channel update -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/Client1Organchors.tx
+
+[터미널1] Client1 조직의 peer1 노드를 channelclient1 채널에 가입
+# CORE_PEER_ADDRESS=peer1.client1.acornpub.com:7051
+# peer channel join -b channelclient1.block
+
+[터미널2] Company 조직의 peer0 노드를 channelclient1 채널에 가입 및 앵커 피어 지정 업데이트 
+# peer channel join -b channelclient1.block
+# peer channel update -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/CompanyOrganchors.tx
+
+
+[터미널2] Company 조직의 peer1 노드를 channelclient1 채널에 가입 
+# CORE_PEER_ADDRESS=peer1.company.acornpub.com:7051
+# peer channel join -b channelclient1.block
+
+3. 체인코드 작성 
+
+$ cd $GOPATH/src/careerpath
+$ sudo chown $USER:$USER chaincode
+$ cd chaincode
+$ mkdir java
+
+프로젝트 java로 이동시키기
+
+3-1. 체인코드 테스트 
+
+[터미널1] client1 조직의 peer0 노드 CLI 실행 
+$ cd $GOPATH/src/careerpath/basic-network
+$ docker stop cli && docker rm cli
+$ docker-compose up -d cli 
+$ docker exec -it cli bash
+
+# peer chaincode install -l java -n career-cc -v 1.0 -p /opt/gopath/src/chaincode/java
+# peer chaincode instantiate -o orderer.acornpub.com:7050 -C channelclient1 -n career-cc -v 1.0 -c '{"Args":["a", "10"]}' -P "OR ('Client1Org.member')"
+
+$ docker-compose -f docker-compose.yaml down
+
+
 ```
