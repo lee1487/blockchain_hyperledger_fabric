@@ -278,34 +278,21 @@ $ cd $GOPATH/src/careerpath/basic-network
 $ touch .env && vi .env
 COMPOSE_PROJECT_NAME=net 입력 후 저장
 
-$ docker-compose -f docker-compose.yaml -p net up -d orderer.acornpub.com peer0.client1.acornpub.com peer1.client1.acornpub.com peer0.company.acornpub.com peer1.company.acornpub.com cli	
-
-터미널 2개 실행
-[터미널1] Client1 조직의 peer0 노드 CLI 실행 
-$ docker exec -it cli bash
-
-[터미널2] Company 조직의 peer0 노드 CLI 실행 
-$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" -it cli bash
-
-[터미널1] Client1 조직의 peer0 노드에서 channelclient1 채널 생성 
-# peer channel create -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/channel1.tx
-
-[터미널1] Client1 조직의 peer0 노드를 channelclient1 채널에 가입 및 앵커 피어 지정 업데이트 
-# peer channel join -b channelclient1.block
-# peer channel update -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/Client1Organchors.tx
-
-[터미널1] Client1 조직의 peer1 노드를 channelclient1 채널에 가입
-# CORE_PEER_ADDRESS=peer1.client1.acornpub.com:7051
-# peer channel join -b channelclient1.block
-
-[터미널2] Company 조직의 peer0 노드를 channelclient1 채널에 가입 및 앵커 피어 지정 업데이트 
-# peer channel join -b channelclient1.block
-# peer channel update -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/CompanyOrganchors.tx
+$ docker-compose -f docker-compose.yaml down
+$ docker-compose -f docker-compose.yaml up -d orderer.acornpub.com peer0.client1.acornpub.com peer1.client1.acornpub.com peer0.company.acornpub.com peer1.company.acornpub.com cli	
 
 
-[터미널2] Company 조직의 peer1 노드를 channelclient1 채널에 가입 
-# CORE_PEER_ADDRESS=peer1.company.acornpub.com:7051
-# peer channel join -b channelclient1.block
+$ docker exec cli peer channel create -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/channel1.tx
+
+$ docker exec cli peer channel join -b channelclient1.block
+$ docker exec cli peer channel update -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/Client1Organchors.tx
+
+$ docker exec -e "CORE_PEER_ADDRESS=peer1.client1.acornpub.com:7051" cli peer channel join -b channelclient1.block
+
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" cli peer channel join -b channelclient1.block
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" cli peer channel update -o orderer.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/CompanyOrganchors.tx
+
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer1.company.acornpub.com:7051" cli peer channel join -b channelclient1.block
 
 3. 체인코드 작성 
 
@@ -324,8 +311,8 @@ $ docker stop cli && docker rm cli
 $ docker-compose up -d cli 
 $ docker exec -it cli bash
 
-# peer chaincode install -l java -n career-cc -v 1.0 -p /opt/gopath/src/chaincode/java
-# peer chaincode instantiate -o orderer.acornpub.com:7050 -C channelclient1 -n career-cc -v 1.0 -c '{"Args":["a", "10"]}' -P "OR ('Client1Org.member')"
+# peer chaincode install -l java -n ca1cc -v 1.0 -p /opt/gopath/src/chaincode/java
+# peer chaincode instantiate -o orderer.acornpub.com:7050 -C channelclient1 -n ca1cc -v 1.0 -c '{"Args":[""]}'
 
 $ docker-compose -f docker-compose.yaml down
 
