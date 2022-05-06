@@ -302,6 +302,8 @@ $ cd chaincode
 $ mkdir java
 
 프로젝트 java로 이동시키기
+에러 이유 build.gradle 
+shadowJar {} 작성 내용중 attributes 'Main-Class' 이 부분 변경을 안해서 계속 container exit code1 에러 발생한것임
 
 3-1. 체인코드 테스트 
 
@@ -311,8 +313,24 @@ $ docker stop cli && docker rm cli
 $ docker-compose up -d cli 
 $ docker exec -it cli bash
 
-# peer chaincode install -l java -n ca1cc -v 1.0 -p /opt/gopath/src/chaincode/java
-# peer chaincode instantiate -o orderer.acornpub.com:7050 -C channelclient1 -n ca1cc -v 1.0 -c '{"Args":[""]}'
+# peer chaincode install -l java -n career-cc -v 1.0 -p /opt/gopath/src/chaincode/java
+# peer chaincode instantiate -o orderer.acornpub.com:7050 -C channelclient1 -n career-cc -v 1.0 -c '{"Args":[""]}' -P "OR ('Client1Org.member')"
+# peer chaincode invoke -o orderer.acornpub.com:7050 -C channelclient1 -n career-cc -c '{"function": "initMember", "Args":[""]}'
+# peer chaincode invoke -o orderer.acornpub.com:7050 -C channelclient1 -n career-cc -c '{"function": "getMember", "Args":["lee1487"]}'
+# peer chaincode invoke -o orderer.acornpub.com:7050 -C channelclient1 -n career-cc -c '{"function": "setCareer", "Args":["lee1487", "TFM", "programmer", "20191202", "20220506"]}'
+# peer chaincode invoke -o orderer.acornpub.com:7050 -C channelclient1 -n career-cc -c '{"function": "getCareer", "Args":["CR0"]}'
+
+4. 애플리케이션을 위한 CA 서버 구성  
+
+docker-compose-ca.yaml 파일 작성
+./crypto-config/peerOrganizations/client1.acornpub.com/ca 안의 내용 확인해서 환경변수 설정 내용 작성 
+FABRIC_CA_SERVER_CA_CERTFILE: CA 서버 인증서 파일 경로 
+FABRIC_CA_SERVER_CA_KEYFILE: CA 서버의 개인 키가 저장된 경로
+
+$ docker-compose -f docker-compose-ca.yaml up -d ca.client1.acornpub.com
+
+5.JAVA SDK 개발 
+https://github.com/hyperledger/fabric-samples/blob/release-1.4/fabcar/java/src/main/java/org/example/EnrollAdmin.java 참조
 
 $ docker-compose -f docker-compose.yaml down
 
