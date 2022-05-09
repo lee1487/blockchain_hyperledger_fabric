@@ -329,10 +329,27 @@ FABRIC_CA_SERVER_CA_KEYFILE: CA 서버의 개인 키가 저장된 경로
 
 $ docker-compose -f docker-compose-ca.yaml up -d ca.client1.acornpub.com
 
-5.JAVA SDK 개발 
-https://github.com/hyperledger/fabric-samples/blob/release-1.4/fabcar/java/src/main/java/org/example/EnrollAdmin.java 참조
-
+5. Node.js SDK 개발 
+$ cd $GOPATH/src/careerpath
+$ mkdir -p application/sdk && cd application/sdk
+$ touch enrollAdmin.js
+$ touch registUsers.js
+$ cd $GOPATH/src/careerpath/application
+$ touch package.json
+$ vi package.json
+	package.json 내용 입력
+$ npm install --save
+$ cd $GOPATH/src/careerpath/application
+$ touch connection.json && vi connection.json
+connection.json에서 디렉토리 내용 찾아서 수정 /home/hslee/go/src/careerpath/basic-network/crypto-config/peerOrganizations/client1.acornpub.com/users/Admin@client1.acornpub.com/msp/keystore 내용 수정
+$ cd $GOPATH/src/careerpath/application/sdk
+$ vi enrollAdmin.js
+$ node enrollAdmin.js
+$ vi registUsers.js
+$ node registUsers.js
 $ docker-compose -f docker-compose.yaml down
+
+chaincode build 에러 발생해서 build.gradle 부분 일부 수정
 
 
 ```
