@@ -351,5 +351,76 @@ $ docker-compose -f docker-compose.yaml down
 
 chaincode build 에러 발생해서 build.gradle 부분 일부 수정
 
+6. Java SDK 개발 
+$ cd $GOPATH/src/careerpath
+$ mkdir -p application/sdk && cd application/sdk
 
+sdk 폴더에 bootjar 파일 생성 후 java -jar xxxx.jar 실행
+이때 connection.json은 /application/ 위치에 복붙
+
+여기까지가 하이퍼레저 기본 설정 내용들 이였다. 
+```
+
+# 하이퍼레저 패브릭 프로젝트 심화 
+```
+앞에서 설치했던 도커 컨테이너를 전부 내리고 네트워크와 체인코드를 확장하기 위해 다음 커맨드를 실행 
+
+$ docker stop $(docker ps -a -q)
+$ docker rm $(docker ps -a -q)
+$ docker rmi -f $(docker images dev-* -q)
+$ rm -rf $GOPATH/src/careerpath/application/wallet/*
+$ cp -r $GOPATH/src/careerpath/ $GOPATH/src/careerpath-2
+$ cd $GOPATH/src/careerpath-2
+
+crypto-config.yaml, configtx.yaml, docker-compose.yaml
+$ cd $GOPATH/src/careerpath-2/basic-network
+$ vi crypto-config.yaml -> Client2 조직 내용 추가 
+$ vi configtx.yaml -> 프로필 컨소시엄에서 Client2 조직 내용 추가 Channel2 내용 추가
+$ vi docker-compose.yaml -> Client2 조직에 해당하는 peer 노드 2개 추가, cli -> cli1,2 변경
+
+couchDB 기반 피어 노드 구성 
+$ vi docker-compose.yaml -> peer 조직에 couchdb 컨테이너 내용 추가
+
+카프카 기반 오더링 서비스 노드 구성 
+$ vi crypto-config.yaml -> orderer 노드 추가 
+$ vi configtx.yaml -> order타입 변경, 브로커 설정 변경 
+$ vi docker-compose.yaml -> orderer1로변경 및 orderer2 추가
+$ vi docker-compose.yaml -> 주키퍼 3개에 대한 컨테이너 설정 추가
+$ vi docker-compose.yaml -> kafka 4개에 대한 구성 추가 
+$ vi docker-compose.yaml -> 모든 피어 노드의 depends_on 설정을 두개의 오더링 서비스 노드 구성으로 변경
+
+base 디렉토리 및 kafka-base.yaml 파일 생성 
+$ cd $GOPATH/src/careerpath-2/basic-network/
+$ mkdir base && cd base
+$ touch kafka-base.yaml
+$ vi kafka-base.yaml
+
+career-2 상태를 career 프로젝트 첫 시작 상태로 변경 후 실행 
+$ ./bin/cryptogen generate --config=./crypto-config.yaml
+$ mkdir config
+$ ./bin/configtxgen -profile OrdererGenesis -outputBlock ./config/genesis.block
+$ ./bin/configtxgen -profile Channel1 - outputCreateChannelTx ./config/channel1.tx -channelID channelclient1
+$ ./bin/configtxgen -profile Channel2 - outputCreateChannelTx ./config/channel2.tx -channelID channelclient2
+$ ./bin/configtxgen -profile Channel1 - outputAnchorPeersUpdate ./config/Client1Organchors.tx - channelID channelclient1 -asOrg Client1Org
+$ ./bin/configtxgen -profile Channel2 - outputAnchorPeersUpdate ./config/Client2Organchors.tx - channelID channelclient2 -asOrg Client2Org
+$ ./bin/configtxgen -profile Channel1 - outputAnchorPeersUpdate ./config/CompanyOrganchors.tx - channelID channelclient1 -asOrg CompanyOrg
+$ ./bin/configtxgen -profile Channel2 - outputAnchorPeersUpdate ./config/CompanyOrganchors.tx - channelID channelclient2 -asOrg CompanyOrg
+
+$ docker-compose up -d
+
+
+$ docker exec cli1 peer channel create -o -orderer1.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/channel1.tx
+$ docker exec cli1 peer channel join -b channelclient1.block
+$ docker exec cli1 peer channel update -o orderer1.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/Client1Organchors.tx
+
+$ docker exec -e "CORE_PEER_ADDRESS=peer1.client1.acornpub.com:7051" cli1 peer channel join -b channelclient1.block
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" cli1 peer channel join -b channelclient1.block
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" cli1 peer channel update -o orderer1.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/CompanyOrganchorsChannel1.tx
+
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer1.company.acornpub.com:7051" cli1 peer channel join -b channelclient1.block
+
+$ docker exec cli2 peer channel create -o orderer1.acornpub.com:7050 -c channelclient2 -f /etc/hyperledger/configtx/channel2.tx
+
+$ docker exec cli2 peer channel join -b channelclient2.block
+$ docker exec cli2 peer channel update -o orderer1.acornpub.com:7050 -c channelclient2 -f /etc/hyperledger/configtx/Client2Organchors.tx
 ```
