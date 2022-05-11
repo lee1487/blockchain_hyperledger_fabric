@@ -2,6 +2,10 @@
 ```
 
 Ubuntu 18.04 설치
+네트워크 구성 
+https://www.youtube.com/watch?v=CKUv3oEI8Yo&t=363s  32분 참조
+
+
 ---------------------------------------------------------
 하이퍼레저 설치전 기본 설치 구성
 ---------------------------------------------------------
@@ -364,16 +368,23 @@ sdk 폴더에 bootjar 파일 생성 후 java -jar xxxx.jar 실행
 # 하이퍼레저 패브릭 프로젝트 심화 
 ```
 앞에서 설치했던 도커 컨테이너를 전부 내리고 네트워크와 체인코드를 확장하기 위해 다음 커맨드를 실행 
-
+$ cd $GOPATH/src
 $ docker stop $(docker ps -a -q)
 $ docker rm $(docker ps -a -q)
 $ docker rmi -f $(docker images dev-* -q)
-$ rm -rf $GOPATH/src/careerpath/application/wallet/*
-$ cp -r $GOPATH/src/careerpath/ $GOPATH/src/careerpath-2
-$ cd $GOPATH/src/careerpath-2
+$ mkdir careerpath2 && cd careerpath2
+$ mkdir basic-network && cd basic-network
+$ mkdir crypto-config
+$ touch crypto-config.yaml
+
+$ touch configtx.yaml
+$ touch docker-compose.yaml
+$ export FABRIC_CFG_PATH=$PWD
+$ cp -r $GOPATH/src/fabric-samples/bin ./
+
 
 crypto-config.yaml, configtx.yaml, docker-compose.yaml
-$ cd $GOPATH/src/careerpath-2/basic-network
+$ cd $GOPATH/src/careerpath2/basic-network
 $ vi crypto-config.yaml -> Client2 조직 내용 추가 
 $ vi configtx.yaml -> 프로필 컨소시엄에서 Client2 조직 내용 추가 Channel2 내용 추가
 $ vi docker-compose.yaml -> Client2 조직에 해당하는 peer 노드 2개 추가, cli -> cli1,2 변경
@@ -390,26 +401,29 @@ $ vi docker-compose.yaml -> kafka 4개에 대한 구성 추가
 $ vi docker-compose.yaml -> 모든 피어 노드의 depends_on 설정을 두개의 오더링 서비스 노드 구성으로 변경
 
 base 디렉토리 및 kafka-base.yaml 파일 생성 
-$ cd $GOPATH/src/careerpath-2/basic-network/
+$ cd $GOPATH/src/careerpath2/basic-network/
 $ mkdir base && cd base
 $ touch kafka-base.yaml
 $ vi kafka-base.yaml
 
-career-2 상태를 career 프로젝트 첫 시작 상태로 변경 후 실행 
 $ ./bin/cryptogen generate --config=./crypto-config.yaml
 $ mkdir config
 $ ./bin/configtxgen -profile OrdererGenesis -outputBlock ./config/genesis.block
-$ ./bin/configtxgen -profile Channel1 - outputCreateChannelTx ./config/channel1.tx -channelID channelclient1
-$ ./bin/configtxgen -profile Channel2 - outputCreateChannelTx ./config/channel2.tx -channelID channelclient2
-$ ./bin/configtxgen -profile Channel1 - outputAnchorPeersUpdate ./config/Client1Organchors.tx - channelID channelclient1 -asOrg Client1Org
-$ ./bin/configtxgen -profile Channel2 - outputAnchorPeersUpdate ./config/Client2Organchors.tx - channelID channelclient2 -asOrg Client2Org
-$ ./bin/configtxgen -profile Channel1 - outputAnchorPeersUpdate ./config/CompanyOrganchors.tx - channelID channelclient1 -asOrg CompanyOrg
-$ ./bin/configtxgen -profile Channel2 - outputAnchorPeersUpdate ./config/CompanyOrganchors.tx - channelID channelclient2 -asOrg CompanyOrg
 
-$ docker-compose up -d
+$ ./bin/configtxgen -profile Channel1 -outputCreateChannelTx ./config/channel1.tx -channelID channelclient1
+$ ./bin/configtxgen -profile Channel2 -outputCreateChannelTx ./config/channel2.tx -channelID channelclient2
+$ ./bin/configtxgen -profile Channel1 -outputAnchorPeersUpdate ./config/Client1Organchors.tx -channelID channelclient1 -asOrg Client1Org
+$ ./bin/configtxgen -profile Channel2 -outputAnchorPeersUpdate ./config/Client2Organchors.tx -channelID channelclient2 -asOrg Client2Org
+$ ./bin/configtxgen -profile Channel1 -outputAnchorPeersUpdate ./config/CompanyOrganchorsChannel1.tx -channelID channelclient1 -asOrg CompanyOrg
+$ ./bin/configtxgen -profile Channel2 -outputAnchorPeersUpdate ./config/CompanyOrganchorsChannel2.tx -channelID channelclient2 -asOrg CompanyOrg
 
 
-$ docker exec cli1 peer channel create -o -orderer1.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/channel1.tx
+$ touch .env && vi .env
+COMPOSE_PROJECT_NAME=net 입력 후 저장
+$ docker-compose -f docker-compose.yaml up -d
+
+
+$ docker exec cli1 peer channel create -o orderer1.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/channel1.tx
 $ docker exec cli1 peer channel join -b channelclient1.block
 $ docker exec cli1 peer channel update -o orderer1.acornpub.com:7050 -c channelclient1 -f /etc/hyperledger/configtx/Client1Organchors.tx
 
@@ -423,4 +437,72 @@ $ docker exec cli2 peer channel create -o orderer1.acornpub.com:7050 -c channelc
 
 $ docker exec cli2 peer channel join -b channelclient2.block
 $ docker exec cli2 peer channel update -o orderer1.acornpub.com:7050 -c channelclient2 -f /etc/hyperledger/configtx/Client2Organchors.tx
+
+$ docker exec -e "CORE_PEER_ADDRESS=peer1.client2.acornpub.com:7051" cli2 peer channel join -b channelclient2.block
+
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" cli2 peer channel join -b channelclient2.block
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer0.company.acornpub.com:7051" cli2 peer channel update -o orderer1.acornpub.com:7050 -c channelclient2 -f /etc/hyperledger/configtx/CompanyOrganchorsChannel2.tx
+
+$ docker exec -e "CORE_PEER_LOCALMSPID=CompanyOrg" -e "CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/company.acornpub.com/users/Admin@company.acornpub.com/msp" -e "CORE_PEER_ADDRESS=peer1.company.acornpub.com:7051" cli2 peer channel join -b channelclient2.block
+
+
+docker-compose up 후 create channel할때 에러 났었는데 원인은 kafka-base.yaml 오타로 생각된다. 수정내용은 이부분 오타와 zookeeper와 kafka 버전을 0.4.22로 맞췄다는 것 
+```
+
+# 하이퍼레저 패브릭 최신버전 설치 
+```
+1. curl, git 설치 
+$ sudo apt install -y curl
+$ curl -V   7.58.0
+
+$ sudo apt install -y git 
+$ git --version		2.17.1
+
+2. docker 설치
+$  sudo apt-get update
+
+$ sudo apt-get install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+$ echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+$ sudo apt-get update
+$ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+$ sudo usermod -aG docker $USER
+$ source ~/.bashrc
+$ docker -v			20.10.15
+$ docker-compose --version
+
+3. docker-compose 설치
+$ sudo curl -L "https://github.com/docker/compose/releases/download/v2.4.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+$ sudo chmod +x /usr/local/bin/docker-compose
+$ docker-compose --version      v2.4.0
+
+3. go 설치
+$ cd /usr/local
+$ sudo wget https://go.dev/dl/go1.18.2.linux-amd64.tar.gz
+$ sudo tar -C /usr/local -xzf go1.18.2.linux-amd64.tar.gz
+$ echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee -a /etc/profile && \
+echo 'export GOPATH=$HOME/go' | tee -a $HOME/.bashrc && \
+echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin' | tee -a $HOME/.bashrc && \
+mkdir -p $HOME/go/{src,pkg,bin}
+$ sudo reboot
+$ go version	1.18.2
+
+4. node, npm 설치
+$ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+$ source ~/.bashrc
+$ nvm install --lts 		--> node v16.15.0, npm v8.5.5 설치됨
+
+5. java 설치
+$ sudo add-apt-repository ppa:openjdk-r/ppa
+$ sudo apt update
+$ sudo apt install openjdk-11-jdk 
+$ javac -version
+$ java -version		11.0.15
+
 ```
