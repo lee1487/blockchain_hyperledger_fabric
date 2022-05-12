@@ -451,6 +451,10 @@ docker-compose up 후 create channel할때 에러 났었는데 원인은 kafka-b
 
 # 하이퍼레저 패브릭 최신버전 설치 
 ```
+-----------------------------------------------------------
+최신 하이퍼레저 패브릭 네트워크 구축시 필요 구축 환경설정
+-----------------------------------------------------------
+
 1. curl, git 설치 
 $ sudo apt install -y curl
 $ curl -V   7.58.0
@@ -473,9 +477,9 @@ $ echo \
 $ sudo apt-get update
 $ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 $ sudo usermod -aG docker $USER
-$ source ~/.bashrc
+$ sudo reboot
 $ docker -v			20.10.15
-$ docker-compose --version
+
 
 3. docker-compose 설치
 $ sudo curl -L "https://github.com/docker/compose/releases/download/v2.4.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -495,7 +499,7 @@ $ go version	1.18.2
 
 4. node, npm 설치
 $ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-$ source ~/.bashrc
+$ sudo reboot
 $ nvm install --lts 		--> node v16.15.0, npm v8.5.5 설치됨
 
 5. java 설치
@@ -504,5 +508,53 @@ $ sudo apt update
 $ sudo apt install openjdk-11-jdk 
 $ javac -version
 $ java -version		11.0.15
+
+10. 하이퍼레저 패브릭 설치 
+$ cd $GOPATH/src
+$ curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.2.2 1.4.9
+
+
+-----------------------------------------------------------
+하이퍼레저 패브릭 시작하기
+fabric-samples/test-network/
+-----------------------------------------------------------
+
+$ cd $GOPATH/src/fabric-samples/test-network/
+$ ./network.sh up
+$ ./network.sh createChannel
+$ ./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go
+$ export PATH=${PWD}/../bin:$PATH
+$ export FABRIC_CFG_PATH=$PWD/../config/
+
+$ export CORE_PEER_TLS_ENABLED=true
+$ export CORE_PEER_LOCALMSPID="Org1MSP"
+$ export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+$ export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+$ export CORE_PEER_ADDRESS=localhost:7051
+
+$ peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n basic \
+--peerAddresses localhost:7051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"function":"InitLedger","Args":[]}'
+
+$ peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllAssets"]}'
+
+$ peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile ${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n basic \
+--peerAddresses localhost:7051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles ${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"function":"TransferAsset","Args":["asset6","Christopher"]}'
+
+$ export CORE_PEER_TLS_ENABLED=true
+$ export CORE_PEER_LOCALMSPID="Org2MSP"
+$ export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+$ export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+$ export CORE_PEER_ADDRESS=localhost:9051
+
+$ peer chaincode query -C mychannel -n basic -c '{"Args":["ReadAsset","asset6"]}'
+$ ./network.sh down
+
+$ ./network.sh up -ca
+
+-----------------------------------------------------------
+체인코드 분석 
+-----------------------------------------------------------
+https://github.com/hyperledger/fabric-samples
+하이퍼레저 공식 github에서 체인코드 하나씩 분석하면 된다.
 
 ```
