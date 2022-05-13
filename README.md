@@ -509,7 +509,23 @@ $ sudo apt install openjdk-11-jdk
 $ javac -version
 $ java -version		11.0.15
 
-10. 하이퍼레저 패브릭 설치 
+6. gradle 설치 
+
+$ VERSION=7.4.1
+$ wget https://services.gradle.org/distributions/gradle-${VERSION}-bin.zip -P /tmp
+$ sudo unzip -d /opt/gradle /tmp/gradle-${VERSION}-bin.zip
+$ sudo ln -s /opt/gradle/gradle-${VERSION} /opt/gradle/latest
+
+$ sudo gedit /etc/profile.d/gradle.sh
+아래내용 입력후 저장
+export GRADLE_HOME=/opt/gradle/latest
+export PATH=${GRADLE_HOME}/bin:${PATH}
+
+$ sudo chmod +x /etc/profile.d/gradle.sh
+$ source /etc/profile.d/gradle.sh
+
+
+7. 하이퍼레저 패브릭 설치 
 $ cd $GOPATH/src
 $ curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.2.2 1.4.9
 
@@ -556,5 +572,10 @@ $ ./network.sh up -ca
 -----------------------------------------------------------
 https://github.com/hyperledger/fabric-samples
 하이퍼레저 공식 github에서 체인코드 하나씩 분석하면 된다.
+
+asset-transfer-basic/chaincode-java 
+체인코드 테스트 
+$ ./network.sh up createChannel -c mychannel
+$ ./network.sh deployCC -c mychannel -ccn latest-basic-chaincode -ccp ../asset-transfer-basic/chaincode-java/ -ccl java
 
 ```

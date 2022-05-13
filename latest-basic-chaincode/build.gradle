@@ -1,0 +1,86 @@
+plugins {
+	//shadowjar를 사용하기 위한 플러그인 
+	id 'com.github.johnrengelman.shadow' version '5.1.0'
+	//실행가능한 JVM 애플리케이션 생성을 용이하게 한다. 암시적으로 java plugin,Distribution plugin 적용된다.
+    id 'application'
+    // 품질 검사를 수해하는 프로젝트에 여러 작업을 추가한다. 
+    //id 'checkstyle'
+    // Java 코드의 커버리지를 체크하는 라이브러리
+    id 'jacoco'
+}
+
+group = 'chaincode'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+	maven {
+        url 'https://jitpack.io'
+    }
+}
+
+dependencies {
+	implementation 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-shim:2.4.1'
+    implementation 'org.json:json:+'
+    implementation 'com.owlike:genson:1.5'
+    testImplementation 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-shim:2.4.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.assertj:assertj-core:3.11.1'
+    testImplementation 'org.mockito:mockito-core:2.+'
+}
+
+application {
+    mainClass = 'org.hyperledger.fabric.contract.ContractRouter'
+}
+/*
+checkstyle {
+    toolVersion '8.21'
+    configFile file("config/checkstyle/checkstyle.xml")
+}
+
+checkstyleMain {
+    source ='src/main/java'
+}
+
+checkstyleTest {
+    source ='src/test/java'
+}
+*/
+jacocoTestReport {
+    dependsOn test
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.9
+            }
+        }
+    }
+
+    finalizedBy jacocoTestReport
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+mainClassName = 'org.hyperledger.fabric.contract.ContractRouter'
+
+shadowJar {
+    baseName = 'chaincode'
+    version = null
+    classifier = null
+
+    manifest {
+        attributes 'Main-Class': 'org.hyperledger.fabric.contract.ContractRouter'
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+installDist.dependsOn check
