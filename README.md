@@ -569,7 +569,7 @@ $ ./network.sh up -ca
 
 -----------------------------------------------------------
 체인코드 분석 
------------------------------------------------------------
+-----------------------------------------------------------		
 https://github.com/hyperledger/fabric-samples
 하이퍼레저 공식 github에서 체인코드 하나씩 분석하면 된다.
 
@@ -578,4 +578,5 @@ asset-transfer-basic/chaincode-java
 $ ./network.sh up createChannel -c mychannel
 $ ./network.sh deployCC -c mychannel -ccn latest-basic-chaincode -ccp ../asset-transfer-basic/chaincode-java/ -ccl java
 
+$ peer chaincode query -C mychannel -n basicj -c '{"Args":["GetAllAssets"]}'
 ```
